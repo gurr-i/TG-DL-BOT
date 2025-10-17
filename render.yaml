@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: tgsaver-bot
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python core/bot.py
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+    autoDeploy: true
+    healthCheckPath: /health
+    healthCheckTimeout: 100

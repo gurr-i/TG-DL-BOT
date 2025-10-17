@@ -1,0 +1,10 @@
+core/X.session
+core/Y.session
+core/X.session-journal
+core/__pycache__
+__pycache__
+.env
+/.env
+core/downloads
+gitcommands.txt
+env
