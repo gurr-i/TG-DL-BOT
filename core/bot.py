@@ -85,25 +85,69 @@ def cleanup():
 atexit.register(cleanup)
 
 def parse_link(link: str) -> tuple[Optional[str], Optional[int], Optional[str]]:
-    """Parse Telegram link to extract chat ID, message ID, and link type."""
-    private_match = R.match(r"https://t\.me/c/(\d+)/(\d+)", link)
+    """Parse Telegram link to extract chat ID, message ID, and link type.
+    
+    Supports formats:
+    - Private channel: https://t.me/c/chatid/messageid
+    - Group with topics: https://t.me/c/chatid/topicid/messageid
+    - Public channel: https://t.me/username/messageid
+    """
+    # Match private channel/group (with optional topic ID)
+    # Format: https://t.me/c/123456/789 or https://t.me/c/123456/2/789
+    private_match = R.match(r"https://t\.me/c/(\d+)/(?:\d+/)?(\d+)", link)
+    
+    # Match public channel
     public_match = R.match(r"https://t\.me/([^/]+)/(\d+)", link)
     
     if private_match:
-        return int(f"-100{private_match.group(1)}"), int(private_match.group(2)), "private"
+        chat_id = int(f"-100{private_match.group(1)}")
+        message_id = int(private_match.group(2))
+        logger.info(f"Parsed private link: chat_id={chat_id}, message_id={message_id}")
+        return chat_id, message_id, "private"
     elif public_match:
-        return public_match.group(1), int(public_match.group(2)), "public"
+        username = public_match.group(1)
+        message_id = int(public_match.group(2))
+        logger.info(f"Parsed public link: username={username}, message_id={message_id}")
+        return username, message_id, "public"
+    
+    logger.error(f"Failed to parse link: {link}")
     return None, None, None
 
 async def fetch_message(client: C, userbot: Optional[C], chat_id: Any, message_id: int, link_type: str) -> Optional[M]:
-    """Fetch a message from the specified chat and ID."""
-    try:
-        logger.info(f"Fetching message from 🪼 {chat_id}, Message ID: {message_id}, Type: {link_type}")
-        target_client = client if link_type == "public" else userbot
-        return await target_client.get_messages(chat_id, message_id)
-    except Exception as e:
-        logger.error(f"Error fetching message: {e}")
+    """Fetch a message from the specified chat and ID with retry logic."""
+    target_client = client if link_type == "public" else userbot
+    
+    if not target_client:
+        logger.error(f"No client available for {link_type} channel access")
         return None
+    
+    retry_count = 0
+    max_retries = 2  # Retry twice for transient network issues
+    
+    while retry_count <= max_retries:
+        try:
+            logger.info(f"Fetching message from 🪼 {chat_id}, Message ID: {message_id}, Type: {link_type} (attempt {retry_count + 1})")
+            message = await target_client.get_messages(chat_id, message_id)
+            
+            if message:
+                logger.info(f"Successfully fetched message {message_id}")
+                return message
+            else:
+                logger.warning(f"Message {message_id} returned None")
+                return None
+                
+        except Exception as e:
+            retry_count += 1
+            logger.error(f"Error fetching message {message_id} (attempt {retry_count}/{max_retries + 1}): {e}")
+            
+            if retry_count <= max_retries:
+                # Exponential backoff: 1s, 2s, 4s
+                await asyncio.sleep(2 ** (retry_count - 1))
+            else:
+                logger.error(f"Failed to fetch message {message_id} after {max_retries + 1} attempts")
+                return None
+    
+    return None
 
 async def progress_update(current: int, total: int, user_data: Dict[str, Any]) -> None:
     """Update progress for download/upload with percentage, speed, and ETA."""
@@ -199,120 +243,148 @@ async def process_message(bot_client: C, userbot: Optional[C], message: M, desti
         logger.info(f"Added task {task_id} to download queue")
 
     retry_count = 0
+    downloaded_file = None  # Track downloaded file for cleanup
+    
     try:
         if message.media:
             start_time = time.time()
             if link_type == "private" and userbot:
-                while retry_count < MAX_RETRIES:
-                    try:
-                        download_msg = await bot_client.send_message(destination, "⚡Starting Download⚡")
-                        progress_info[user_id] = {"cancel": False, "last_step": 0, "user_id": user_id, "retry_count": retry_count}
-                        
-                        # Log download attempt
-                        logger.info(f"Download attempt {retry_count + 1} for user {user_id}")
-
-                        user_data_download = {
-                            "client": bot_client, "chat_id": destination, "message_id": download_msg.id,
-                            "start_time": start_time, "phase": "download", "user_id": user_id
-                        }
-                        downloaded_file = await userbot.download_media(
-                            message, progress=progress_update, progress_args=(user_data_download,)
-                        )
-                        
-                        # Validate downloaded file
-                        is_valid, error_msg = await validate_file(downloaded_file)
-                        if not is_valid:
-                            raise Exception(error_msg)
-                            
-                        break  # Success, exit retry loop
-                    except Exception as e:
-                        retry_count += 1
-                        if retry_count >= MAX_RETRIES:
-                            logger.error(f"Max retries reached for download: {e}")
-                            raise
-                        logger.warning(f"Download attempt {retry_count} failed: {e}. Retrying...")
-                        await asyncio.sleep(2 ** retry_count)  # Exponential backoff
-
-                if progress_info.get(user_id, {}).get("cancel"):
-                    await bot_client.edit_message_text(destination, download_msg.id, "Canceled.")
-                    await safe_remove_file(downloaded_file)
-                    del progress_info[user_id]
-                    return "Canceled."
-
-                if not downloaded_file:
-                    await bot_client.edit_message_text(destination, download_msg.id, "Failed.")
-                    del progress_info[user_id]
-                    return "Failed."
-
                 try:
-                    await bot_client.delete_messages(destination, download_msg.id)
-                except Exception:
-                    logger.warning(f"Failed to delete download message {download_msg.id}")
-
-                file_name = O.path.basename(downloaded_file)
-                file_size = O.path.getsize(downloaded_file) / (1024 * 1024)
-                upload_msg = await bot_client.send_message(destination, f"Uploading {file_name} ({file_size:.2f} MB)...")
-                progress_info[user_id] = {"cancel": False, "last_step": 0, "user_id": user_id}
-
-                user_data_upload = {
-                    "client": bot_client, "chat_id": destination, "message_id": upload_msg.id,
-                    "start_time": start_time, "phase": "upload", "user_id": user_id,
-                    "file_data": {"file_name": file_name, "file_size": file_size}
-                }
-
-                retry_count = 0
-                while retry_count < MAX_RETRIES:
-                    try:
-                        # Add to upload queue
-                        async with queue_lock:
-                            await upload_queue.put((task_id, downloaded_file))
-                            logger.info(f"Added task {task_id} to upload queue")
-
-                        if message.sticker:
-                            await bot_client.send_photo(destination, photo=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.video:
-                            width, height, duration = message.video.width, message.video.height, message.video.duration
-                            await bot_client.send_video(destination, video=downloaded_file, caption=message.caption.markdown if message.caption else "", thumb="Thumb.jpg", width=width, height=height, duration=duration, progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.video_note:
-                            await bot_client.send_video_note(destination, video_note=downloaded_file, progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.voice:
-                            await bot_client.send_voice(destination, voice=downloaded_file, progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.audio:
-                            await bot_client.send_audio(destination, audio=downloaded_file, caption=message.caption.markdown if message.caption else "", thumb="Thumb.jpg", progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.photo:
-                            await bot_client.send_photo(destination, photo=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.document:
-                            await bot_client.send_document(destination, document=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
-                        elif message.animation:
-                            await bot_client.send_animation(destination, animation=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
-                        
-                        # Cleanup after successful upload
-                        await safe_remove_file(downloaded_file)
+                    while retry_count < MAX_RETRIES:
                         try:
-                            await bot_client.delete_messages(destination, upload_msg.id)
+                            download_msg = await bot_client.send_message(destination, "⚡Starting Download⚡")
+                            progress_info[user_id] = {"cancel": False, "last_step": 0, "user_id": user_id, "retry_count": retry_count}
+                            
+                            # Log download attempt
+                            logger.info(f"Download attempt {retry_count + 1} for user {user_id}")
+
+                            user_data_download = {
+                                "client": bot_client, "chat_id": destination, "message_id": download_msg.id,
+                                "start_time": start_time, "phase": "download", "user_id": user_id
+                            }
+                            downloaded_file = await userbot.download_media(
+                                message, progress=progress_update, progress_args=(user_data_download,)
+                            )
+                            
+                            # Validate downloaded file
+                            is_valid, error_msg = await validate_file(downloaded_file)
+                            if not is_valid:
+                                raise Exception(error_msg)
+                                
+                            break  # Success, exit retry loop
                         except Exception as e:
-                            logger.warning(f"Failed to delete upload message {upload_msg.id}: {e}")
-                        
-                        # Clear progress info
+                            retry_count += 1
+                            if retry_count >= MAX_RETRIES:
+                                logger.error(f"Max retries reached for download: {e}")
+                                raise
+                            logger.warning(f"Download attempt {retry_count} failed: {e}. Retrying...")
+                            await asyncio.sleep(2 ** retry_count)  # Exponential backoff
+
+                    if progress_info.get(user_id, {}).get("cancel"):
+                        await bot_client.edit_message_text(destination, download_msg.id, "Canceled.")
+                        await safe_remove_file(downloaded_file)
+                        del progress_info[user_id]
+                        return "Canceled."
+
+                    if not downloaded_file:
+                        await bot_client.edit_message_text(destination, download_msg.id, "Failed.")
+                        del progress_info[user_id]
+                        return "Failed."
+
+                    try:
+                        await bot_client.delete_messages(destination, download_msg.id)
+                    except Exception:
+                        logger.warning(f"Failed to delete download message {download_msg.id}")
+
+                    file_name = O.path.basename(downloaded_file)
+                    file_size = O.path.getsize(downloaded_file) / (1024 * 1024)
+                    upload_msg = await bot_client.send_message(destination, f"Uploading {file_name} ({file_size:.2f} MB)...")
+                    progress_info[user_id] = {"cancel": False, "last_step": 0, "user_id": user_id}
+
+                    user_data_upload = {
+                        "client": bot_client, "chat_id": destination, "message_id": upload_msg.id,
+                        "start_time": start_time, "phase": "upload", "user_id": user_id,
+                        "file_data": {"file_name": file_name, "file_size": file_size}
+                    }
+
+                    retry_count = 0
+                    while retry_count < MAX_RETRIES:
+                        try:
+                            # Add to upload queue
+                            async with queue_lock:
+                                await upload_queue.put((task_id, downloaded_file))
+                                logger.info(f"Added task {task_id} to upload queue")
+
+                            if message.sticker:
+                                await bot_client.send_photo(destination, photo=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.video:
+                                width, height, duration = message.video.width, message.video.height, message.video.duration
+                                await bot_client.send_video(destination, video=downloaded_file, caption=message.caption.markdown if message.caption else "", thumb="Thumb.jpg", width=width, height=height, duration=duration, progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.video_note:
+                                await bot_client.send_video_note(destination, video_note=downloaded_file, progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.voice:
+                                await bot_client.send_voice(destination, voice=downloaded_file, progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.audio:
+                                await bot_client.send_audio(destination, audio=downloaded_file, caption=message.caption.markdown if message.caption else "", thumb="Thumb.jpg", progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.photo:
+                                await bot_client.send_photo(destination, photo=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.document:
+                                await bot_client.send_document(destination, document=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
+                            elif message.animation:
+                                await bot_client.send_animation(destination, animation=downloaded_file, caption=message.caption.markdown if message.caption else "", progress=progress_update, progress_args=(user_data_upload, ))
+                            
+                            # Cleanup after successful upload
+                            await safe_remove_file(downloaded_file)
+                            downloaded_file = None  # Mark as cleaned up
+                            try:
+                                await bot_client.delete_messages(destination, upload_msg.id)
+                            except Exception as e:
+                                logger.warning(f"Failed to delete upload message {upload_msg.id}: {e}")
+                            
+                            # Clear progress info
+                            if user_id in progress_info:
+                                del progress_info[user_id]
+                            
+                            # Log success
+                            logger.info(f"Successfully processed task {task_id}")
+                            return "Done."
+                            
+                        except (OSError, AttributeError, TimeoutError) as e:
+                            # Handle Pyrogram session crashes and timeouts
+                            retry_count += 1
+                            error_type = type(e).__name__
+                            logger.error(f"Pyrogram error during upload (attempt {retry_count}/{MAX_RETRIES}): {error_type} - {e}")
+                            
+                            if retry_count >= MAX_RETRIES:
+                                error_msg = f"Upload failed after {MAX_RETRIES} attempts. Network or session issue."
+                                logger.error(f"Max retries reached: {error_msg}")
+                                try:
+                                    await bot_client.edit_message_text(destination, upload_msg.id, f"❌ {error_msg}")
+                                except Exception:
+                                    pass
+                                raise Exception(error_msg)
+                            
+                            logger.warning(f"Retrying upload after {error_type}...")
+                            await asyncio.sleep(2 ** retry_count)  # Exponential backoff
+                            
+                        except Exception as e:
+                            retry_count += 1
+                            if retry_count >= MAX_RETRIES:
+                                logger.error(f"Max retries reached for upload: {e}")
+                                try:
+                                    await bot_client.edit_message_text(destination, upload_msg.id, f"❌ Upload failed: {str(e)[:100]}")
+                                except Exception:
+                                    pass
+                                raise
+                            logger.warning(f"Upload attempt {retry_count} failed: {e}. Retrying...")
+                            await asyncio.sleep(2 ** retry_count)  # Exponential backoff
+                
+                finally:
+                    # Ensure cleanup of downloaded file on any error
+                    if downloaded_file:
+                        await safe_remove_file(downloaded_file)
                         if user_id in progress_info:
                             del progress_info[user_id]
-                        
-                        # Log success
-                        logger.info(f"Successfully processed task {task_id}")
-                        return "Done."
-                        
-                    except Exception as e:
-                        retry_count += 1
-                        if retry_count >= MAX_RETRIES:
-                            logger.error(f"Max retries reached for upload: {e}")
-                            raise
-                        logger.warning(f"Upload attempt {retry_count} failed: {e}. Retrying...")
-                        await asyncio.sleep(2 ** retry_count)  # Exponential backoff
-                # except Exception as e:
-                #     logger.error(f"Error during media upload: {e}")
-                #     await safe_remove_file(downloaded_file)
-                #     del progress_info[user_id]
-                #     return f"Upload failed: {str(e)}"
             else:
                 try:
                     await message.copy(chat_id=destination)
@@ -578,6 +650,7 @@ async def handle_message(_: C, m: M) -> None:
             progress = await batch_controller.get_progress(user_id)
             if not progress or progress.state == BatchState.CANCELLED:
                 await pt.edit("Batch operation cancelled.")
+                await batch_controller.cleanup_completed(user_id)
                 break
             elif progress.state == BatchState.PAUSED:
                 await pt.edit(f"⏸ Batch operation paused at {i}/{count}. Use /resume to continue.")
@@ -586,20 +659,57 @@ async def handle_message(_: C, m: M) -> None:
                     progress = await batch_controller.get_progress(user_id)
                     if not progress or progress.state == BatchState.CANCELLED:
                         await pt.edit("Batch operation cancelled.")
+                        await batch_controller.cleanup_completed(user_id)
                         return
                     elif progress.state == BatchState.RUNNING:
                         await pt.edit(f"▶️ Resuming from {i}/{count}...")
                         break
-            msg = await fetch_message(X, Y, chat_id, start_msg + i, link_type)
-            if msg:
+            
+            # Fetch message with error handling
+            current_msg_id = start_msg + i
+            msg = await fetch_message(X, Y, chat_id, current_msg_id, link_type)
+            
+            if not msg:
+                logger.warning(f"Failed to fetch message {current_msg_id}, skipping...")
+                await pt.edit(f"{i+1}/{count}: ❌ Message not found, skipping...")
+                
+                # Update progress even for skipped messages to keep count accurate
+                await batch_controller.update_progress(user_id, current_msg_id)
+                await asyncio.sleep(0.5)  # Brief pause to show error
+                continue
+            
+            # Process message with error handling
+            try:
                 result = await process_message(X, Y, msg, destination, link_type, user_id)
-                if i % 5 == 0 or i == count - 1:  # Update every 5 messages or at end
+                
+                # Update batch controller progress after successful processing
+                await batch_controller.update_progress(user_id, current_msg_id)
+                
+                # Update progress message more frequently for better feedback
+                if i % 3 == 0 or i == count - 1:
                     await pt.edit(f"{i+1}/{count}: {result}")
-                if "Done" in result:
+                
+                if "Done" in result or "Sent" in result or "Copied" in result:
                     success_count += 1
+                
+                # Small delay between messages to prevent rate limiting
+                if i < count - 1:  # Don't delay after the last message
+                    await asyncio.sleep(0.3)
+                    
+            except Exception as e:
+                logger.error(f"Error processing message {current_msg_id}: {e}")
+                await pt.edit(f"{i+1}/{count}: ❌ Error - {str(e)[:50]}")
+                
+                # Update progress even for failed messages
+                await batch_controller.update_progress(user_id, current_msg_id)
+                await asyncio.sleep(0.5)  # Brief pause to show error
+                continue
         
-        await m.reply_text(f"Batch Completed ✅, {success_count}/{count} messages processed")
-        del user_states[user_id]
+        # Cleanup and completion
+        await batch_controller.cleanup_completed(user_id)
+        await m.reply_text(f"Batch Completed ✅, {success_count}/{count} messages processed successfully")
+        if user_id in user_states:
+            del user_states[user_id]
 
 logger.info("✅ Bot has been started successfully!")
 # Start the health check server

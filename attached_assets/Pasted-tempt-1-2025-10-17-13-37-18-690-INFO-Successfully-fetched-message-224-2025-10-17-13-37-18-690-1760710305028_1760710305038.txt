@@ -1,0 +1,173 @@
+tempt 1)
+2025-10-17 13:37:18,690 - INFO - Successfully fetched message 224
+2025-10-17 13:37:18,690 - INFO - Added task 798731884_1760708238 to download queue
+2025-10-17 13:37:18,978 - INFO - Download attempt 1 for user 798731884
+2025-10-17 13:37:20,733 - INFO - Added task 798731884_1760708238 to upload queue
+2025-10-17 13:37:23,571 - INFO - Removed file: /home/runner/workspace/core/downloads/NUMBER SYSTEM CLASS -2 BOARD [Gagan Sir].pdf
+2025-10-17 13:37:23,828 - INFO - Successfully processed task 798731884_1760708238
+2025-10-17 13:37:24,130 - INFO - Fetching message from 🪼 -1003179106208, Message ID: 225, Type: private (attempt 1)
+2025-10-17 13:37:24,379 - INFO - Successfully fetched message 225
+2025-10-17 13:37:24,379 - INFO - Added task 798731884_1760708244 to download queue
+2025-10-17 13:37:24,679 - INFO - Fetching message from 🪼 -1003179106208, Message ID: 226, Type: private (attempt 1)
+2025-10-17 13:37:25,211 - INFO - Successfully fetched message 226
+2025-10-17 13:37:25,211 - INFO - Added task 798731884_1760708245 to download queue
+2025-10-17 13:37:25,643 - INFO - Download attempt 1 for user 798731884
+2025-10-17 13:42:19,767 - INFO - Added task 798731884_1760708245 to upload queue
+2025-10-17 13:49:37,287 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:49:40,638 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:49:44,610 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:49:48,198 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:52:35,488 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:52:37,924 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:52:41,490 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:52:46,988 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:22,464 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:25,493 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:29,321 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:33,111 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:37,971 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:40,999 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:44,832 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:48,623 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:53,479 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:54:56,505 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:03,667 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:06,985 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:11,232 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:16,096 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:19,175 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:22,491 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:26,739 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:31,601 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:34,681 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:37,997 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:42,245 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:47,108 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:50,187 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:53,505 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:56:57,752 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:03,718 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:05,694 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:09,012 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:13,258 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:19,225 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:21,201 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:24,521 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:28,766 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:34,731 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:36,707 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 13:57:40,027 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:01,722 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:04,841 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:08,738 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:12,643 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:17,230 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:20,352 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:24,246 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:28,152 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:01:32,737 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:03:45,123 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:03:47,722 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:03:51,572 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:03:56,826 - INFO - [1] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:00,630 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:03,229 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:07,081 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:12,332 - INFO - [2] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:16,138 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:18,741 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:22,589 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:41,607 - INFO - [3] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:41,607 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:56,482 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:56,482 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:04:57,118 - INFO - [4] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:05,727 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:11,989 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:11,993 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:12,625 - INFO - [5] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:21,236 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:27,496 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:27,503 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:28,139 - INFO - [6] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:36,750 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:43,002 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:43,011 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:51,962 - INFO - [7] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:52,257 - INFO - [8] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:58,513 - INFO - [8] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:05:58,518 - INFO - [8] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:07,468 - INFO - [8] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:07,763 - INFO - [9] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:14,020 - INFO - [9] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:14,025 - INFO - [9] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:22,974 - INFO - [9] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:23,269 - WARNING - [10] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:25,050 - INFO - NetworkTask stopped
+2025-10-17 14:06:29,528 - WARNING - [10] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:40,776 - INFO - PingTask stopped
+2025-10-17 14:06:47,679 - INFO - Send exception: AttributeError 'NoneType' object has no attribute 'call_exception_handler'
+2025-10-17 14:06:47,679 - ERROR - 'NoneType' object has no attribute 'call_exception_handler'
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/methods/advanced/save_file.py", line 109, in worker
+    await session.invoke(data)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 7 more times]
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 419, in invoke
+    raise e from None
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 406, in invoke
+    return await self.send(query, timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 357, in send
+    raise e
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 354, in send
+    await self.connection.send(payload)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/connection/connection.py", line 78, in send
+    await self.protocol.send(data)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/connection/transport/tcp/tcp_abridged.py", line 38, in send
+    await super().send(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/connection/transport/tcp/tcp.py", line 147, in send
+    raise OSError(e)
+OSError: 'NoneType' object has no attribute 'call_exception_handler'
+2025-10-17 14:06:47,694 - INFO - Disconnected
+2025-10-17 14:06:47,695 - INFO - Session stopped
+2025-10-17 14:06:47,695 - INFO - Connecting...
+2025-10-17 14:06:47,944 - INFO - Connected! Production DC5 (media) - IPv4
+2025-10-17 14:06:47,944 - INFO - NetworkTask started
+2025-10-17 14:06:48,781 - INFO - Session initialized: Layer 192
+2025-10-17 14:06:48,781 - INFO - Device: CPython 3.11.13 - Pyrogram 2.1.32
+2025-10-17 14:06:48,781 - INFO - System: Linux 6.2.16 (en)
+2025-10-17 14:06:48,781 - INFO - Session started
+2025-10-17 14:06:48,781 - INFO - PingTask started
+2025-10-17 14:06:55,778 - WARNING - [10] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:06:55,778 - WARNING - [10] Retrying "upload.SaveBigFilePart" due to: Request timed out
+2025-10-17 14:07:02,679 - ERROR - Request timed out
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/methods/advanced/save_file.py", line 109, in worker
+    await session.invoke(data)
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 429, in invoke
+    return await self.invoke(query, retries - 1, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [Previous line repeated 7 more times]
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 419, in invoke
+    raise e from None
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 406, in invoke
+    return await self.send(query, timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/pyrogram/session/session.py", line 368, in send
+    raise TimeoutError("Request timed out")
+TimeoutError: Request timed out

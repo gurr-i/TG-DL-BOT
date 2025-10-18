@@ -13,6 +13,29 @@ A powerful Telegram bot built with Pyrogram that can save and forward messages, 
 - ✅ Added graceful fallbacks with clear error messages when userbot is unavailable
 - ✅ Set up Replit workflow with proper Python path configuration
 - ✅ Bot is now fully operational for both public and private channels
+- ✅ **FIXED BATCH PROCESSING** - Bot no longer stops or misses messages during batch operations:
+  - Added progress tracking for every message (success, failed, or skipped)
+  - Improved error handling with retry logic for network issues
+  - Added proper cleanup to prevent memory leaks
+  - Enhanced logging for better debugging
+  - Added delays between messages to prevent rate limiting
+- ✅ **FIXED GROUP MESSAGE SUPPORT** - Bot now properly handles group messages with topics:
+  - Updated link parser to support group topic format: /c/groupid/topicid/messageid
+  - Added logging for better link parsing visibility
+  - Supports both standard private channels and group topics
+- ✅ **FIXED FILE CLEANUP BUG** - Eliminated orphaned temporary files:
+  - Added finally block to ensure downloaded files are always cleaned up
+  - Prevents memory leaks and disk space issues
+  - Proper cleanup even if upload fails after all retries
+- ✅ **IMPROVED NETWORK RESILIENCE**:
+  - Changed fetch_message to use exponential backoff (1s, 2s, 4s)
+  - Better handling of transient network issues
+  - Reduced server load during retries
+- ✅ **FIXED PYROGRAM SESSION CRASH BUG** - Critical fix for large file upload failures:
+  - Added specific error handling for Pyrogram crashes (OSError, AttributeError, TimeoutError)
+  - Prevents bot crashes when network session drops during large file uploads
+  - User-friendly error messages when uploads fail after retries
+  - Guaranteed file cleanup even on session crashes via finally block
 
 ## Project Structure
 ```
