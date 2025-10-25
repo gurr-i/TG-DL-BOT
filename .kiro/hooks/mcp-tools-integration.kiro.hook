@@ -1,0 +1,22 @@
+{
+  "enabled": true,
+  "name": "MCP Server Tools Integration",
+  "description": "Monitors core bot files and configuration changes to determine when MCP server tools should be utilized for enhanced functionality",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "core/bot.py",
+      "core/config.py",
+      "core/batch.py",
+      "core/server.py",
+      "utils/*.py",
+      ".env",
+      "requirements.txt"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Analyze the recent changes to the bot files and determine if MCP server tools can enhance the functionality. Consider: 1) Are there new integrations needed? 2) Can MCP tools improve error handling or monitoring? 3) Are there opportunities for external service connections? 4) Should configuration management be enhanced with MCP capabilities? Provide specific recommendations on which MCP server tools to use and how to integrate them."
+  }
+}

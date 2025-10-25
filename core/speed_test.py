@@ -72,16 +72,12 @@ async def run_speedtest(client=None, message=None):
             f"📸 Shareable Result: {result['share'] if result['share'] else 'N/A'}"
         )
         
-        # if client and message:
-        #     try:
-        #         await status_msg.edit_text(results_text)
-        #     except Exception as e:
-        #         print(f"Failed to edit message: {e}")
-        #         await message.reply_text(results_text)
-        # else:
-        #     print(results_text)
-
-        await status_msg.delete()
+        # Clean up status message
+        if client and message:
+            try:
+                await status_msg.delete()
+            except Exception:
+                pass
             
         return results_text
 

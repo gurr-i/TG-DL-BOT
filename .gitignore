@@ -1,10 +1,62 @@
-core/X.session
-core/Y.session
-core/X.session-journal
-core/__pycache__
-__pycache__
+# Environment and credentials
 .env
-/.env
-core/downloads
+*.env
+!.env.example
+
+# Session files
+*.session
+*.session-journal
+sessions/
+core/*.session
+core/*.session-journal
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Downloads and temporary files
+downloads/
+core/downloads/
+attached_assets/
+*.tmp
+*.temp
+
+# Logs
+*.log
+bot.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Misc
 gitcommands.txt
-env
+*.zip
+*.rar

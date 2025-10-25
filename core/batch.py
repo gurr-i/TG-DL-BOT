@@ -27,8 +27,13 @@ class BatchController:
     async def start_batch(self, user_id: int, total_messages: int, start_message_id: int) -> bool:
         """Initialize a new batch operation for a user."""
         async with self._lock:
+            # Auto-cleanup completed/cancelled batches
             if user_id in self.batch_operations:
-                return False
+                existing = self.batch_operations[user_id]
+                if existing.state in [BatchState.COMPLETED, BatchState.CANCELLED]:
+                    del self.batch_operations[user_id]
+                else:
+                    return False  # Active batch exists
             
             self.batch_operations[user_id] = BatchProgress(
                 current=0,

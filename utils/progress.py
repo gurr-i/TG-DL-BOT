@@ -1,70 +1,158 @@
-"""Progress tracking utilities for downloads and uploads."""
+"""Enhanced progress tracking utilities with better performance."""
 
 import time
-from typing import Dict, Any
-from pyrogram.types import Message
+import asyncio
+from typing import Dict, Any, Optional
+from dataclasses import dataclass
 
-class ProgressTracker:
+@dataclass
+class ProgressState:
+    """Progress state for a specific operation."""
+    current: int = 0
+    total: int = 0
+    start_time: float = 0
+    last_update: float = 0
+    last_percentage: int = -1
+    speed_samples: list = None
+    
+    def __post_init__(self):
+        if self.speed_samples is None:
+            self.speed_samples = []
+
+class EnhancedProgressTracker:
+    """High-performance progress tracker with advanced features."""
+    
     def __init__(self):
-        self.progress_cache = {}
-        self.progress_info = {}
-
+        self.progress_states: Dict[int, ProgressState] = {}
+        self.update_lock = asyncio.Lock()
+        self.min_update_interval = 3.0  # Minimum seconds between updates (optimized from 1.0)
+        
+    async def start_progress(self, message_id: int, total: int) -> None:
+        """Initialize progress tracking for a message."""
+        async with self.update_lock:
+            self.progress_states[message_id] = ProgressState(
+                total=total,
+                start_time=time.time()
+            )
+    
     async def update_progress(self, current: int, total: int, user_data: Dict[str, Any]) -> None:
-        """Update progress for download/upload with percentage, speed, and ETA."""
-        progress_percentage = (current / total) * 100
-        progress_step = int(progress_percentage // 10) * 10
-        message_id = user_data["message_id"]
-
-        if (message_id not in self.progress_cache or 
-            self.progress_cache[message_id] != progress_step or 
-            progress_percentage >= 100):
+        """Enhanced progress update with intelligent throttling."""
+        message_id = user_data.get("message_id")
+        if not message_id:
+            return
             
-            self.progress_cache[message_id] = progress_step
-            completed_blocks = int(progress_percentage / 10)
-            progress_bar = "🔥" * completed_blocks + "🪵" * (10 - completed_blocks)
-
-            elapsed_time = time.time() - user_data["start_time"]
-            speed = (current / elapsed_time) / (1024 * 1024) if elapsed_time > 0 else 0
-            eta = time.strftime("%M:%S", time.gmtime((total - current) / (speed * 1024 * 1024))) if speed > 0 else "00:00"
-
-            action = "Downloading" if user_data["phase"] == "download" else "Uploading"
-            file_info = user_data.get("file_data", {})
-            action_message = (
-                f"**{action} - {file_info.get('file_name', '')} ({file_info.get('file_size', 0):.2f} MB)**"
-                if file_info else f"**{action}.. Hang tight**"
+        current_time = time.time()
+        progress_percentage = int((current / total) * 100) if total > 0 else 0
+        
+        # Get or create progress state
+        if message_id not in self.progress_states:
+            self.progress_states[message_id] = ProgressState(
+                total=total,
+                start_time=current_time
             )
-
-            message_text = (
-                f"{action_message}\n\n{progress_bar}\n\n"
-                f"📊 **Completed**: {progress_percentage:.2f}%\n"
-                f"🚀 **Speed**: {speed:.2f} MB/sec\n"
-                f"⏳ **ETA**: {eta}\n\n"
-                f"**Powered by @unknown_5145**"
+        
+        state = self.progress_states[message_id]
+        state.current = current
+        
+        # Optimized throttling - update every 5% or 3 seconds for better performance
+        should_update = (
+            (progress_percentage != state.last_percentage and progress_percentage % 5 == 0) or
+            current_time - state.last_update >= self.min_update_interval or
+            progress_percentage >= 100 or
+            current == 0  # Always update on start
+        )
+        
+        if not should_update:
+            return
+            
+        state.last_update = current_time
+        state.last_percentage = progress_percentage
+        
+        # Calculate speed with smoothing
+        elapsed = current_time - state.start_time
+        if elapsed > 0:
+            current_speed = current / elapsed
+            state.speed_samples.append(current_speed)
+            
+            # Keep only recent samples for smoothing
+            if len(state.speed_samples) > 10:
+                state.speed_samples = state.speed_samples[-10:]
+            
+            # Use average of recent samples
+            avg_speed = sum(state.speed_samples) / len(state.speed_samples)
+            speed_mbps = avg_speed / (1024 * 1024)
+        else:
+            speed_mbps = 0
+        
+        # Calculate ETA
+        if speed_mbps > 0 and current < total:
+            remaining_mb = (total - current) / (1024 * 1024)
+            eta_seconds = remaining_mb / speed_mbps
+            eta = self._format_time(eta_seconds)
+        else:
+            eta = "calculating..."
+        
+        # Create enhanced progress bar
+        progress_bar = self._create_progress_bar(progress_percentage)
+        
+        # Format message
+        action = "📥 Downloading" if user_data.get("phase") == "download" else "📤 Uploading"
+        file_info = user_data.get("file_data", {})
+        
+        if file_info:
+            file_name = file_info.get('file_name', 'Unknown')[:25]
+            file_size_mb = file_info.get('file_size', total / (1024 * 1024))
+            header = f"{action} **{file_name}**"
+        else:
+            file_size_mb = total / (1024 * 1024)
+            header = f"{action} content"
+        
+        message_text = (
+            f"{header}\n\n"
+            f"{progress_bar}\n\n"
+            f"📊 **Progress**: {progress_percentage}%\n"
+            f"🚀 **Speed**: {speed_mbps:.1f} MB/s\n"
+            f"⏱️ **ETA**: {eta}\n"
+            f"📦 **Size**: {current/(1024*1024):.1f}/{file_size_mb:.1f} MB\n\n"
+            f"*High-Performance Telegram Saver*"
+        )
+        
+        try:
+            await user_data["client"].edit_message_text(
+                user_data["chat_id"],
+                user_data["message_id"],
+                message_text
             )
+        except Exception as e:
+            # Ignore rate limit and minor errors
+            if "too many requests" not in str(e).lower():
+                pass  # Silent fail for progress updates
+    
+    def _create_progress_bar(self, percentage: int, length: int = 20) -> str:
+        """Create a visual progress bar."""
+        filled = int(percentage / 100 * length)
+        bar = "🟩" * filled + "⬜" * (length - filled)
+        return f"{bar} {percentage}%"
+    
+    def _format_time(self, seconds: float) -> str:
+        """Format time duration in human readable format."""
+        if seconds < 60:
+            return f"{int(seconds)}s"
+        elif seconds < 3600:
+            return f"{int(seconds//60)}m {int(seconds%60)}s"
+        else:
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            return f"{hours}h {minutes}m"
+    
+    async def finish_progress(self, message_id: int) -> None:
+        """Clean up progress tracking for completed operation."""
+        async with self.update_lock:
+            self.progress_states.pop(message_id, None)
+    
+    def get_progress_info(self, message_id: int) -> Optional[ProgressState]:
+        """Get current progress state."""
+        return self.progress_states.get(message_id)
 
-            try:
-                await user_data["client"].edit_message_text(
-                    user_data["chat_id"], 
-                    user_data["message_id"], 
-                    message_text
-                )
-            except Exception as e:
-                print(f"Failed to update progress: {e}")
-
-            if progress_percentage >= 100:
-                self.progress_cache.pop(message_id, None)
-
-    def get_progress_info(self, user_id: int) -> Dict[str, Any]:
-        """Get progress information for a specific user."""
-        return self.progress_info.get(user_id, {})
-
-    def set_progress_info(self, user_id: int, info: Dict[str, Any]) -> None:
-        """Set progress information for a specific user."""
-        self.progress_info[user_id] = info
-
-    def clear_progress_info(self, user_id: int) -> None:
-        """Clear progress information for a specific user."""
-        self.progress_info.pop(user_id, None)
-
-# Create a global instance of the progress tracker
-progress_tracker = ProgressTracker()
+# Global instance
+progress_tracker = EnhancedProgressTracker()

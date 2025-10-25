@@ -3,11 +3,19 @@ services:
     name: tgsaver-bot
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python core/bot.py
+    startCommand: python start.py
     plan: free
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11
+        value: 3.11.0
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: PYTHONUNBUFFERED
+        value: 1
     autoDeploy: true
     healthCheckPath: /health
-    healthCheckTimeout: 100
+    healthCheckTimeout: 30
+    disk:
+      name: tgsaver-disk
+      mountPath: /opt/render/project/src/sessions
+      sizeGB: 1

@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "redis": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-redis"],
+      "env": {
+        "REDIS_URL": "redis://localhost:6379"
+      },
+      "disabled": false,
+      "autoApprove": [
+        "mcp_redis_get",
+        "mcp_redis_set",
+        "mcp_redis_delete",
+        "mcp_redis_list"
+      ]
+    }
+  }
+}
