@@ -54,7 +54,9 @@ class DownloadManager:
         Returns:
             Tuple of (message_id, result_string)
         """
+        task_coro = asyncio.current_task()
         async with self.semaphore:
+            self.active_tasks.append(task_coro)
             try:
                 logger.debug(f"[DOWNLOAD_MANAGER] Starting download for message {task.message_id}")
                 
@@ -88,6 +90,8 @@ class DownloadManager:
                 logger.error(f"[DOWNLOAD_MANAGER] Error downloading message {task.message_id}: {e}")
                 performance_optimizer.record_failure()
                 return task.message_id, f"[ERROR] {str(e)[:50]}"
+            finally:
+                self.active_tasks.remove(task_coro)
     
     async def download_batch_parallel(
         self,
