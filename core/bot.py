@@ -905,11 +905,33 @@ async def batch_resume_command(_: Client, m: Message) -> None:
     logger.info(f"[HANDLER] /batch_resume command received from user {m.from_user.id}")
     user_id = m.from_user.id
     
+    # Get the current batch progress
+    progress = await batch_controller.get_progress(user_id)
+    if not progress or progress.state != BatchState.PAUSED:
+        await m.reply_text("[WARNING] **No paused batch to resume**\n\nUse /batch to start a new batch process.")
+        return
+
+    # Resume the batch
     if await batch_controller.resume_batch(user_id):
         await m.reply_text("[OK] **Batch resumed**\n\nUse /batch_status to check progress.")
-        # TODO: Restart batch processing logic here
+
+        # Recalculate remaining messages and the new starting point
+        remaining_count = progress.total - progress.current
+        new_start_message_id = progress.last_processed_id + 1
+
+        # Restart the batch processing logic
+        asyncio.create_task(
+            process_batch_messages(
+                user_id,
+                progress.chat_id,
+                new_start_message_id,
+                remaining_count,
+                progress.destination,
+                progress.link_type
+            )
+        )
     else:
-        await m.reply_text("[WARNING] **No paused batch to resume**\n\nUse /batch to start a new batch process.")
+        await m.reply_text("[ERROR] **Failed to resume batch**\n\nPlease try again or start a new batch.")
 
 @bot_client.on_message(filters.command("batch_cancel"))
 async def batch_cancel_command(_: Client, m: Message) -> None:
@@ -1181,7 +1203,7 @@ async def process_batch_count(m: Message, count_text: str) -> None:
         await batch_controller.cleanup_completed(user_id)
         
         # Initialize batch operation
-        success = await batch_controller.start_batch(user_id, count, start_message_id)
+        success = await batch_controller.start_batch(user_id, count, start_message_id, chat_id_target, link_type, destination)
         if not success:
             await m.reply_text("[ERROR] **Batch initialization failed**\n\nYou may have an active batch. Use /batch_cancel first.")
             return
@@ -1241,12 +1263,12 @@ async def process_batch_messages(user_id: int, chat_id: Any, start_message_id: i
         ]
         
         # Progress callback for batch
-        async def batch_progress_callback(completed: int, total: int):
+        async def batch_progress_callback(completed: int, total: int, message_id: int):
             progress = await batch_controller.get_progress(user_id)
             if progress and progress.state == BatchState.RUNNING:
-                # Update progress with last completed message
+                # Update progress with the actual message ID of the completed task
                 if completed > 0:
-                    await batch_controller.update_progress(user_id, start_message_id + completed - 1)
+                    await batch_controller.update_progress(user_id, message_id)
         
         # Use parallel download manager (3 concurrent downloads)
         logger.info(f"[BATCH] Using parallel download manager with 3 concurrent downloads")
