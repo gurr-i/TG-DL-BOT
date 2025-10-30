@@ -137,14 +137,14 @@ class DownloadManager:
         # Process with progress tracking
         for coro in asyncio.as_completed(download_coroutines):
             try:
-                result = await coro
-                results.append(result)
+                message_id, result_str = await coro
+                results.append((message_id, result_str))
                 completed += 1
                 
                 # Call progress callback if provided
                 if progress_callback:
                     try:
-                        await progress_callback(completed, total)
+                        await progress_callback(completed, total, message_id)
                     except Exception as e:
                         logger.debug(f"Progress callback error: {e}")
                 

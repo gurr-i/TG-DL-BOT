@@ -17,6 +17,10 @@ class BatchProgress:
     state: BatchState
     last_processed_id: int
     start_time: datetime
+    chat_id: Any
+    start_message_id: int
+    link_type: str
+    destination: int
     pause_time: Optional[datetime] = None
 
 class BatchController:
@@ -24,7 +28,7 @@ class BatchController:
         self.batch_operations: Dict[int, BatchProgress] = {}
         self._lock = asyncio.Lock()
     
-    async def start_batch(self, user_id: int, total_messages: int, start_message_id: int) -> bool:
+    async def start_batch(self, user_id: int, total_messages: int, start_message_id: int, chat_id: Any, link_type: str, destination: int) -> bool:
         """Initialize a new batch operation for a user."""
         async with self._lock:
             # Auto-cleanup completed/cancelled batches
@@ -40,7 +44,11 @@ class BatchController:
                 total=total_messages,
                 state=BatchState.RUNNING,
                 last_processed_id=start_message_id - 1,  # Will be incremented before first process
-                start_time=datetime.now()
+                start_time=datetime.now(),
+                chat_id=chat_id,
+                start_message_id=start_message_id,
+                link_type=link_type,
+                destination=destination
             )
             return True
     
