@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pyrogram import Client
 from pyrogram.types import Message
 
-from .performance import performance_optimizer
+from ..performance import performance_optimizer
 
 logger = logging.getLogger(__name__)
 

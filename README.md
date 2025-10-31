@@ -118,7 +118,7 @@
 
 4. **Start the bot**
    ```bash
-   python start.py
+   python main.py
    ```
 
 ### Environment Configuration
@@ -274,19 +274,14 @@ Follow the prompts to authenticate and copy the generated session string to your
 ├── core/
 │   ├── __init__.py
 │   ├── batch.py          # Batch processing controller with state management
-│   ├── bot.py            # Main bot logic and command handlers
+│   ├── bot.py            # Main bot logic and client initialization
 │   ├── config.py         # Configuration management and validation
 │   ├── server.py         # Health check web server (port 3000)
 │   ├── speed_test.py     # Speed testing functionality
 │   ├── performance.py    # Performance optimization engine
-│   ├── download_manager.py # Parallel download orchestration
-│   ├── redis_state.py    # Redis-based state persistence (MCP)
-│   ├── file_manager.py   # Enhanced file operations (MCP)
-│   └── intelligence.py   # Pattern learning (MCP, future)
-├── utils/
-│   ├── __init__.py
-│   ├── progress.py       # Progress tracking utilities
-│   └── session.py        # Session validation and generation
+│   ├── handlers/         # Command handlers
+│   ├── helpers/          # Helper functions
+│   └── managers/         # Manager classes
 ├── bot_types/            # Type definitions and data classes
 │   └── __init__.py       # MessageInfo, UserState, ProgressInfo
 ├── .kiro/
@@ -297,12 +292,24 @@ Follow the prompts to authenticate and copy the generated session string to your
 ├── .env                  # Environment variables (credentials)
 ├── .env.example          # Example environment configuration
 ├── requirements.txt      # Python dependencies
-├── start.py              # Bot startup script
+├── main.py               # Bot startup script
 ├── Procfile              # Heroku deployment config
 ├── render.yaml           # Render.com deployment config
 ├── MCP_SETUP_GUIDE.md    # MCP integration guide
 └── README.md             # Documentation
 ```
+
+## 📚 Documentation
+
+### Core Modules
+
+*   **`main.py`**: The main entry point for the bot.
+*   **`core/bot.py`**: Initializes the Pyrogram clients, loads handlers, and contains the core message processing logic.
+*   **`core/config.py`**: Manages environment variables and configuration.
+*   **`core/batch.py`**: Contains the `BatchController` class for managing batch operations.
+*   **`core/handlers/`**: Contains all the command handlers, separated by functionality.
+*   **`core/helpers/`**: Contains helper functions for tasks like progress tracking and session management.
+*   **`core/managers/`**: Contains manager classes for handling downloads and files.
 
 ## 🔧 Technical Architecture
 

@@ -6,7 +6,7 @@ Quick test script to verify performance improvements are working.
 import asyncio
 import sys
 from core.performance import performance_optimizer
-from core.download_manager import download_manager
+from core.managers.download_manager import download_manager
 
 def test_chunk_sizes():
     """Test chunk size optimization."""

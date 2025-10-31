@@ -24,6 +24,7 @@ class BatchProgress:
     pause_time: Optional[datetime] = None
 
 class BatchController:
+    """Manages batch processing operations, including starting, pausing, resuming, and tracking progress."""
     def __init__(self):
         self.batch_operations: Dict[int, BatchProgress] = {}
         self._lock = asyncio.Lock()
