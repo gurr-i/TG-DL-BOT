@@ -25,12 +25,12 @@ from .batch import BatchController, BatchState
 from .speed_test import run_speedtest
 from .config import config
 from .performance import performance_optimizer
-from .download_manager import download_manager, DownloadTask
+from .managers.download_manager import download_manager, DownloadTask
 
 # Optional Redis state management and file manager
 try:
     from .redis_state import redis_state
-    from .file_manager import file_manager
+    from .managers.file_manager import file_manager
     REDIS_AVAILABLE = True
 except Exception:
     # Logger not available yet, will log later
@@ -182,7 +182,16 @@ atexit.register(sync_cleanup)
 
 # Core utility functions
 def parse_link(link: str) -> tuple[Optional[str], Optional[int], Optional[str]]:
-    """Enhanced link parser with better validation."""
+    """
+    Parses a Telegram message link and extracts the chat ID, message ID, and link type.
+
+    Args:
+        link: The Telegram message link to parse.
+
+    Returns:
+        A tuple containing the chat ID, message ID, and link type ('public' or 'private').
+        Returns (None, None, None) if the link is invalid.
+    """
     if not link or not isinstance(link, str):
         return None, None, None
     
@@ -236,7 +245,19 @@ def parse_link(link: str) -> tuple[Optional[str], Optional[int], Optional[str]]:
         return None, None, None
 
 async def fetch_message(client: Client, userbot: Optional[Client], chat_id: Any, message_id: int, link_type: str) -> Optional[Message]:
-    """Enhanced message fetching with improved error handling."""
+    """
+    Fetches a message from a public or private channel with retry logic.
+
+    Args:
+        client: The bot's Pyrogram client.
+        userbot: The user's Pyrogram client for private channels.
+        chat_id: The ID of the chat where the message is located.
+        message_id: The ID of the message to fetch.
+        link_type: The type of link ('public' or 'private').
+
+    Returns:
+        The fetched message object, or None if the message could not be fetched.
+    """
     target_client = client if link_type == "public" else userbot
     
     if not target_client:
@@ -281,7 +302,15 @@ async def fetch_message(client: Client, userbot: Optional[Client], chat_id: Any,
     return None
 
 async def safe_remove_file(file_path: str) -> bool:
-    """Enhanced file removal with better error handling."""
+    """
+    Safely removes a file from the local filesystem.
+
+    Args:
+        file_path: The path to the file to remove.
+
+    Returns:
+        True if the file was successfully removed, False otherwise.
+    """
     if not file_path or not isinstance(file_path, str):
         return False
     
@@ -296,7 +325,15 @@ async def safe_remove_file(file_path: str) -> bool:
         return False
 
 async def validate_file(file_path: str) -> tuple[bool, str]:
-    """Enhanced file validation with comprehensive checks."""
+    """
+    Validates a file to ensure it exists, is a file, and is not empty or too large.
+
+    Args:
+        file_path: The path to the file to validate.
+
+    Returns:
+        A tuple containing a boolean indicating whether the file is valid and a message.
+    """
     if not file_path or not isinstance(file_path, str):
         return False, "Invalid file path"
     
@@ -330,7 +367,20 @@ async def validate_file(file_path: str) -> tuple[bool, str]:
 
 async def process_message(bot_client: Client, userbot: Optional[Client], message: Message, 
                         destination: int, link_type: str, user_id: int) -> str:
-    """Process and forward media or text messages."""
+    """
+    Processes a fetched message, downloading and forwarding media or copying text.
+
+    Args:
+        bot_client: The bot's Pyrogram client.
+        userbot: The user's Pyrogram client for private channels.
+        message: The message to process.
+        destination: The chat ID where the message should be sent.
+        link_type: The type of link ('public' or 'private').
+        user_id: The ID of the user who initiated the request.
+
+    Returns:
+        A string indicating the result of the operation.
+    """
     if not message:
         return "[ERROR] Message not found"
     
@@ -400,7 +450,20 @@ async def process_message(bot_client: Client, userbot: Optional[Client], message
 
 async def process_media_message(bot_client: Client, userbot: Optional[Client], message: Message, 
                                destination: int, link_type: str, user_id: int) -> str:
-    """Process media messages with download and upload."""
+    """
+    Downloads, uploads, and forwards a media message with progress updates.
+
+    Args:
+        bot_client: The bot's Pyrogram client.
+        userbot: The user's Pyrogram client for private channels.
+        message: The message containing the media to process.
+        destination: The chat ID where the media should be sent.
+        link_type: The type of link ('public' or 'private').
+        user_id: The ID of the user who initiated the request.
+
+    Returns:
+        A string indicating the result of the operation.
+    """
     target_client = userbot if link_type == "private" and userbot else bot_client
     downloaded_file = None
     status_msg = None
@@ -696,395 +759,14 @@ async def process_media_message(bot_client: Client, userbot: Optional[Client], m
             await safe_remove_file(downloaded_file)
 
 # Bot handlers
-@bot_client.on_message(filters.command("start"))
-async def start_command(_: Client, m: Message) -> None:
-    logger.info(f"[HANDLER] /start command received from user {m.from_user.id}")
-    try:
-        response = (
-            "[START] **Welcome to Telegram Message Saver Bot!**\n\n"
-            "[OK] Bot is working perfectly!\n\n"
-            "**Quick Commands:**\n"
-            "• /download <link> - Download a single message\n"
-            "• /batch - Start batch processing\n"
-            "• /help - Show all commands\n"
-            "• /test - Test bot functionality\n\n"
-            "**Status:** All systems operational!\n\n"
-            "Send me a message link to get started!"
-        )
-        await m.reply_text(response)
-        logger.info(f"[HANDLER] /start response sent successfully")
-    except Exception as e:
-        logger.error(f"[HANDLER] Error in /start handler: {e}")
 
-@bot_client.on_message(filters.command("test"))
-async def test_command(_: Client, m: Message) -> None:
-    logger.info(f"[HANDLER] /test command received from user {m.from_user.id}")
-    try:
-        await m.reply_text("[OK] **Test Successful!**\n\nBot is responding correctly to commands.")
-        logger.info(f"[HANDLER] /test response sent successfully")
-    except Exception as e:
-        logger.error(f"[HANDLER] Error in /test handler: {e}")
 
-@bot_client.on_message(filters.command("download"))
-async def download_command(_: Client, m: Message) -> None:
-    logger.info(f"[HANDLER] /download command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    if user_id in active_downloads and active_downloads[user_id]:
-        await m.reply_text("[WARNING] **Download in progress**\n\nPlease wait for current download to complete.")
-        return
-    
-    if len(m.command) > 1:
-        link = " ".join(m.command[1:])
-        await process_download_link(m, link)
-    else:
-        user_states[user_id] = {
-            "step": "download", 
-            "chat_id": int(m.chat.id), 
-            "timestamp": time.time()
-        }
-        await m.reply_text(
-            "[DOWNLOAD] **Single Download**\n\n"
-            "Send me the message link to download.\n\n"
-            "**Examples:**\n"
-            "• https://t.me/channel/123\n"
-            "• https://t.me/c/123456/789\n\n"
-            "Or use: /download <link>"
-        )
 
-async def process_download_link(m: Message, link: str) -> None:
-    """Process a download link."""
-    user_id = m.from_user.id
-    destination = int(m.chat.id)
-    
-    # Mark as active
-    active_downloads[user_id] = True
-    
-    try:
-        # Parse link
-        chat_id, message_id, link_type = parse_link(link)
-        if not chat_id or not message_id:
-            await m.reply_text(
-                "[ERROR] **Invalid link format**\n\n"
-                "**Supported formats:**\n"
-                "• https://t.me/channel/123 (public)\n"
-                "• https://t.me/c/123456/789 (private)\n\n"
-                "Please check your link and try again."
-            )
-            return
-        
-        # Check private channel access
-        if link_type == "private" and not userbot_client:
-            await m.reply_text(
-                "[WARNING] **Private Channel Access Required**\n\n"
-                "This is a private channel, but userbot is not configured.\n\n"
-                "**Setup Steps:**\n"
-                "1. Use /session to generate session string\n"
-                "2. Add SESSION=... to your .env file\n"
-                "3. Restart the bot\n\n"
-                "Contact admin for help."
-            )
-            return
-        
-        # Start processing
-        status_msg = await m.reply_text("[SEARCH] **Fetching message...**")
-        
-        # Fetch message
-        msg = await fetch_message(bot_client, userbot_client, chat_id, message_id, link_type)
-        
-        if not msg:
-            await status_msg.edit("[ERROR] **Message not found or deleted**")
-            return
-        
-        # Process the message
-        result = await process_message(bot_client, userbot_client, msg, destination, link_type, user_id)
-        
-        # Update status based on result
-        if "[OK]" in result:
-            await status_msg.edit("[SUCCESS] **Download completed successfully!**")
-        else:
-            await status_msg.edit(f"[WARNING] **Result**: {result}")
-            
-    except Exception as e:
-        logger.error(f"Download processing error: {e}")
-        await m.reply_text(f"[ERROR] **Processing failed**: {str(e)[:100]}")
-    
-    finally:
-        # Clean up
-        active_downloads.pop(user_id, None)
-        user_states.pop(user_id, None)
 
-@bot_client.on_message(filters.command("batch"))
-async def batch_command(_: Client, m: Message) -> None:
-    """Handle batch processing command."""
-    logger.info(f"[HANDLER] /batch command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    # Check if user already has an active batch
-    current_batch = await batch_controller.get_progress(user_id)
-    if current_batch and current_batch.state in [BatchState.RUNNING, BatchState.PAUSED]:
-        await m.reply_text(
-            f"[WARNING] **Batch operation in progress**\n\n"
-            f"Current: {current_batch.current}/{current_batch.total}\n"
-            f"Status: {current_batch.state.value}\n\n"
-            f"Use /batch_status to check progress\n"
-            f"Use /batch_cancel to cancel current batch"
-        )
-        return
-    
-    # Start new batch setup
-    user_states[user_id] = {
-        "step": "batch_link",
-        "chat_id": int(m.chat.id),
-        "timestamp": time.time()
-    }
-    
-    await m.reply_text(
-        "[INFO] **Batch Processing Setup**\n\n"
-        "Step 1: Send me the **first message link** to start from.\n\n"
-        "**Supported formats:**\n"
-        "• https://t.me/channel/123 (public)\n"
-        "• https://t.me/c/123456/789 (private)\n\n"
-        "**Note:** Bot will download messages sequentially from this point.\n\n"
-        "Send /cancel to abort setup."
-    )
 
-@bot_client.on_message(filters.command("batch_status"))
-async def batch_status_command(_: Client, m: Message) -> None:
-    """Show current batch status."""
-    logger.info(f"[HANDLER] /batch_status command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    current_batch = await batch_controller.get_progress(user_id)
-    if not current_batch:
-        await m.reply_text("[INFO] **No active batch operation**\n\nUse /batch to start a new batch process.")
-        return
-    
-    # Calculate progress percentage
-    progress_percent = (current_batch.current / current_batch.total * 100) if current_batch.total > 0 else 0
-    
-    # Calculate elapsed time
-    elapsed = datetime.now() - current_batch.start_time
-    elapsed_str = str(elapsed).split('.')[0]  # Remove microseconds
-    
-    status_text = (
-        f"[METRICS] **Batch Status**\n\n"
-        f"**Progress:** {current_batch.current}/{current_batch.total} ({progress_percent:.1f}%)\n"
-        f"**Status:** {current_batch.state.value.title()}\n"
-        f"**Elapsed Time:** {elapsed_str}\n"
-        f"**Last Processed:** Message {current_batch.last_processed_id}\n\n"
-    )
-    
-    if current_batch.state == BatchState.RUNNING:
-        status_text += "**Controls:**\n• /batch_pause - Pause operation\n• /batch_cancel - Cancel operation"
-    elif current_batch.state == BatchState.PAUSED:
-        status_text += "**Controls:**\n• /batch_resume - Resume operation\n• /batch_cancel - Cancel operation"
-    elif current_batch.state == BatchState.COMPLETED:
-        status_text += "[SUCCESS] **Batch completed successfully!**"
-        await batch_controller.cleanup_completed(user_id)
-    elif current_batch.state == BatchState.CANCELLED:
-        status_text += "[WARNING] **Batch was cancelled**"
-        await batch_controller.cleanup_completed(user_id)
-    
-    await m.reply_text(status_text)
 
-@bot_client.on_message(filters.command("batch_pause"))
-async def batch_pause_command(_: Client, m: Message) -> None:
-    """Pause current batch operation."""
-    logger.info(f"[HANDLER] /batch_pause command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    if await batch_controller.pause_batch(user_id):
-        await m.reply_text("[OK] **Batch paused**\n\nUse /batch_resume to continue or /batch_cancel to cancel.")
-    else:
-        await m.reply_text("[WARNING] **No active batch to pause**\n\nUse /batch to start a new batch process.")
 
-@bot_client.on_message(filters.command("batch_resume"))
-async def batch_resume_command(_: Client, m: Message) -> None:
-    """Resume paused batch operation."""
-    logger.info(f"[HANDLER] /batch_resume command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    # Get the current batch progress
-    progress = await batch_controller.get_progress(user_id)
-    if not progress or progress.state != BatchState.PAUSED:
-        await m.reply_text("[WARNING] **No paused batch to resume**\n\nUse /batch to start a new batch process.")
-        return
 
-    # Resume the batch
-    if await batch_controller.resume_batch(user_id):
-        await m.reply_text("[OK] **Batch resumed**\n\nUse /batch_status to check progress.")
-
-        # Recalculate remaining messages and the new starting point
-        remaining_count = progress.total - progress.current
-        new_start_message_id = progress.last_processed_id + 1
-
-        # Restart the batch processing logic
-        asyncio.create_task(
-            process_batch_messages(
-                user_id,
-                progress.chat_id,
-                new_start_message_id,
-                remaining_count,
-                progress.destination,
-                progress.link_type
-            )
-        )
-    else:
-        await m.reply_text("[ERROR] **Failed to resume batch**\n\nPlease try again or start a new batch.")
-
-@bot_client.on_message(filters.command("batch_cancel"))
-async def batch_cancel_command(_: Client, m: Message) -> None:
-    """Cancel current batch operation."""
-    logger.info(f"[HANDLER] /batch_cancel command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    if await batch_controller.cancel_batch(user_id):
-        await m.reply_text("[OK] **Batch cancelled**\n\nAll operations stopped. Use /batch to start a new batch process.")
-        # Clean up user state
-        user_states.pop(user_id, None)
-        active_downloads.pop(user_id, None)
-        await batch_controller.cleanup_completed(user_id)
-    else:
-        await m.reply_text("[INFO] **No active operation to cancel**")
-
-@bot_client.on_message(filters.command("cancel"))
-async def cancel_command(_: Client, m: Message) -> None:
-    """Cancel current operation."""
-    logger.info(f"[HANDLER] /cancel command received from user {m.from_user.id}")
-    user_id = m.from_user.id
-    
-    # Clean up any active state
-    user_states.pop(user_id, None)
-    active_downloads.pop(user_id, None)
-    
-    await m.reply_text("[OK] **Operation cancelled**\n\nAll current operations have been stopped.")
-
-@bot_client.on_message(filters.command("cleanup"))
-async def cleanup_command(_: Client, m: Message) -> None:
-    """Clean up old downloaded files."""
-    logger.info(f"[HANDLER] /cleanup command received from user {m.from_user.id}")
-    
-    if not file_manager:
-        await m.reply_text("[ERROR] **File manager not available**\n\nThis feature requires MCP integration.")
-        return
-    
-    try:
-        status_msg = await m.reply_text("[INFO] **Cleaning up old files...**")
-        
-        # Clean files older than 24 hours
-        cleaned = await file_manager.cleanup_old_files(max_age_hours=24)
-        
-        # Get updated stats
-        dir_stats = await file_manager.get_directory_stats()
-        disk_info = await file_manager.monitor_disk_space()
-        
-        cleanup_text = (
-            "[SUCCESS] **Cleanup Complete**\n\n"
-            f"**Files Removed:** {cleaned}\n"
-            f"**Remaining Files:** {dir_stats['total_files']}\n"
-            f"**Total Size:** {dir_stats['total_size_mb']:.1f} MB\n"
-            f"**Free Space:** {disk_info.get('free_gb', 0):.1f} GB"
-        )
-        
-        await status_msg.edit(cleanup_text)
-    except Exception as e:
-        logger.error(f"[HANDLER] Error in /cleanup handler: {e}")
-        await m.reply_text(f"[ERROR] Cleanup failed: {str(e)[:100]}")
-
-@bot_client.on_message(filters.command("help"))
-async def help_command(_: Client, m: Message) -> None:
-    """Show help information."""
-    logger.info(f"[HANDLER] /help command received from user {m.from_user.id}")
-    
-    help_text = (
-        "[INFO] **Telegram Message Saver Bot - Help**\n\n"
-        "**Basic Commands:**\n"
-        "• /start - Start the bot\n"
-        "• /test - Test bot functionality\n"
-        "• /help - Show this help message\n"
-        "• /speed - Run internet speed test\n"
-        "• /stats - Show performance & disk statistics\n"
-        "• /cleanup - Remove old downloaded files\n\n"
-        "**Download Commands:**\n"
-        "• /download <link> - Download single message\n"
-        "• Send any Telegram link to download\n\n"
-        "**Batch Commands:**\n"
-        "• /batch - Start batch processing (parallel mode)\n"
-        "• /batch_status - Check batch progress\n"
-        "• /batch_pause - Pause current batch\n"
-        "• /batch_resume - Resume paused batch\n"
-        "• /batch_cancel - Cancel current batch\n\n"
-        "**General:**\n"
-        "• /cancel - Cancel current operation\n\n"
-        "**Supported Link Formats:**\n"
-        "• https://t.me/channel/123 (public)\n"
-        "• https://t.me/c/123456/789 (private)\n\n"
-        "**Note:** Private channels require userbot configuration."
-    )
-    
-    await m.reply_text(help_text)
-
-@bot_client.on_message(filters.command("speed"))
-async def speed_command(_: Client, m: Message) -> None:
-    """Run internet speed test."""
-    logger.info(f"[HANDLER] /speed command received from user {m.from_user.id}")
-    try:
-        result = await run_speedtest(bot_client, m)
-        if result:
-            await m.reply_text(result)
-    except Exception as e:
-        logger.error(f"[HANDLER] Error in /speed handler: {e}")
-        await m.reply_text(f"[ERROR] Speed test failed: {str(e)[:100]}")
-
-@bot_client.on_message(filters.command("stats"))
-async def stats_command(_: Client, m: Message) -> None:
-    """Show performance statistics."""
-    logger.info(f"[HANDLER] /stats command received from user {m.from_user.id}")
-    try:
-        from .performance import performance_optimizer
-        from .download_manager import download_manager
-        
-        perf_stats = performance_optimizer.get_metrics()
-        dl_stats = download_manager.get_stats()
-        
-        # Get disk space info (if file_manager available)
-        if file_manager:
-            disk_info = await file_manager.monitor_disk_space()
-            dir_stats = await file_manager.get_directory_stats()
-        else:
-            disk_info = {"free_gb": 0, "warning": False}
-            dir_stats = {"total_files": 0, "total_size_mb": 0}
-        
-        stats_text = (
-            "[METRICS] **Performance Statistics**\n\n"
-            f"**Downloads:** {perf_stats['total_downloads']}\n"
-            f"**Uploads:** {perf_stats['total_uploads']}\n"
-            f"**Data Downloaded:** {perf_stats['total_data_downloaded_mb']} MB\n"
-            f"**Data Uploaded:** {perf_stats['total_data_uploaded_mb']} MB\n"
-            f"**Avg Download Speed:** {perf_stats['average_download_speed_mbps']} MB/s\n"
-            f"**Avg Upload Speed:** {perf_stats['average_upload_speed_mbps']} MB/s\n"
-            f"**Success Rate:** {perf_stats['success_rate']}%\n"
-            f"**Failed Operations:** {perf_stats['failed_operations']}\n"
-            f"**Retry Count:** {perf_stats['retry_count']}\n"
-            f"**Uptime:** {perf_stats['uptime_seconds']}s\n\n"
-            f"**Download Manager:**\n"
-            f"• Max Concurrent: {dl_stats['max_concurrent']}\n"
-            f"• Active Tasks: {dl_stats['active_tasks']}\n"
-            f"• Available Slots: {dl_stats['available_slots']}\n\n"
-            f"**Disk Usage:**\n"
-            f"• Files: {dir_stats['total_files']}\n"
-            f"• Size: {dir_stats['total_size_mb']:.1f} MB\n"
-            f"• Free Space: {disk_info.get('free_gb', 0):.1f} GB"
-        )
-        
-        if disk_info.get('warning'):
-            stats_text += "\n\n[WARNING] Low disk space! Use /cleanup"
-        
-        await m.reply_text(stats_text)
-    except Exception as e:
-        logger.error(f"[HANDLER] Error in /stats handler: {e}")
-        await m.reply_text(f"[ERROR] Could not retrieve stats: {str(e)[:100]}")
 
 @bot_client.on_message(filters.text & ~filters.command(["start", "test", "download", "help", "speed", "stats", "cleanup", "batch", "batch_status", "batch_pause", "batch_resume", "batch_cancel", "cancel"]))
 async def handle_text_message(_: Client, m: Message) -> None:
@@ -1318,11 +1000,26 @@ async def process_batch_messages(user_id: int, chat_id: Any, start_message_id: i
     
     logger.info(f"[BATCH] Batch processing completed for user {user_id}")
 
+import importlib
+import pkgutil
+
+def load_handlers():
+    """Dynamically load all handlers from the 'handlers' directory."""
+    handlers_dir = os.path.join(os.path.dirname(__file__), "handlers")
+    for _, name, _ in pkgutil.iter_modules([handlers_dir]):
+        try:
+            importlib.import_module(f".handlers.{name}", __package__)
+            logger.info(f"Successfully loaded handler: {name}")
+        except Exception as e:
+            logger.error(f"Failed to load handler {name}: {e}")
+
 def main():
     """Main function to start the bot."""
     try:
         os.makedirs("./sessions", exist_ok=True)
         
+        load_handlers()
+
         start_server()
         logger.info("[OK] Health check server started")
         
